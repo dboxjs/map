@@ -1,0 +1,31 @@
+{
+    "name": "@dboxjs/map",
+    "version": "0.0.1",
+    "description": "dboxjs map",
+    "main": "map.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/dboxjs/map.git"
+    },
+    "keywords": [
+      "d3",
+      "dboxjs",
+      "dbox",
+      "map",
+      "charts"
+    ],
+    "author": "alecs.garza@gmail.com",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/dboxjs/map/issues"
+    },
+    "homepage": "https://github.com/dboxjs/map#readme",
+    "devDependencies": {
+      "babel-plugin-external-helpers": "^6.22.0",
+      "babel-preset-env": "^1.6.0"
+    }
+  }
+  
