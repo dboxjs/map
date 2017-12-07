@@ -33,9 +33,9 @@ export default function(config) {
     return vm;
   }
 
-  Map.prototype.z = function(col) {
+  Map.prototype.color = function(col) {
     var vm = this;
-    vm._config.z = col;
+    vm._config.color = col;
     return vm;
   }
 
@@ -65,18 +65,7 @@ export default function(config) {
     return vm;
   }
 
-  Map.prototype.setChartType = function(){
-    var vm = this; 
-
-    if(vm._config && vm._config.map && vm._config.map.geo){
-      switch(vm._config.map.geo){
-        case 'mexico':
-          vm._geo = geoMexico(vm._chart, vm._config);
-        break;
-      }
-    }
-  },
-
+ 
   Map.prototype.data = function(data) {
     var vm = this;
     
@@ -86,7 +75,7 @@ export default function(config) {
   
     vm._data = data;
     vm._quantiles = vm._setQuantile(data);
-    vm._minMax = d3.extent(data, function(d) { return +d[vm._config.z]; })
+    vm._minMax = d3.extent(data, function(d) { return +d[vm._config.color]; })
 
     vm._config.map.min = vm._minMax[0];
     vm._config.map.max = vm._minMax[1];
@@ -155,26 +144,41 @@ export default function(config) {
           .data(topojson.feature(t, t.objects[objects]).features, parser)
           .enter().append("path")
           .attr("d", d3.geoPath().projection(vm._projection))
-          .attr("id", id)
+          .attr("id", id) 
           .attr("data-geotype", objects)
           .attr("fill", "#808080")
           .attr('stroke', '#a0a0a0')
           .style('stroke-width', '1px')
           .on('mouseover', function(d, i) {
-              if (vm._config.data.mouseover) {
-                  vm._config.data.mouseover.call(this, d, i)
-              }
-              vm._tip.show(d, d3.select(this).node())
+            if (vm._config.data.onmouseover) { //External function call
+              vm._config.data.onmouseover.call(this, d, i);
+            }
+            
+            if(vm._config.map.quantiles.colorsOnHover){ //OnHover colors
+              d3.select(this).attr('fill', function(d) {
+                  return vm._getQuantileColor(d[vm._config.color],'onHover');
+              })
+            }
+
+            vm._tip.show(d, d3.select(this).node()) //Show TIP
           })
           .on('mouseout', function(d, i) {
-              if (vm._config.data.mouseout) {
-                  vm._config.data.mouseout.call(this, d, i)
+              if (vm._config.data.onmouseout) { //External function call
+                  vm._config.data.onmouseout.call(this, d, i)
               }
-              vm._tip.hide(d, d3.select(this).node())
+              
+              if(vm._config.map.quantiles.colorsOnHover){ //OnHover reset default color
+                d3.select(this).attr('fill', function(d) {
+                    return vm._getQuantileColor(d[vm._config.color],'default');
+                })
+              }
+              //Hide tip
+              vm._tip.hide(d, d3.select(this).node()) 
+              
           })
           .on("click", function(d, i) {
-              if (vm._config.onclick) {
-                  vm._config.onclick.call(this, d, i)
+              if (vm._config.data.onclick) {
+                  vm._config.data.onclick.call(this, d, i)
               }
           })
 
@@ -189,10 +193,10 @@ export default function(config) {
             return d.id ? d.id : d[vm._config.id];
           })
           .attr('fill', function(d) {
-              return vm._getQuantileColor(d);
+              return vm._getQuantileColor(d[vm._config.color],'default');
           })
           .attr('data-total', function(d) {
-              return +d[vm._config.z];
+              return +d[vm._config.color];
           })
 
       //Resets the map paths data to topojson
@@ -214,7 +218,7 @@ export default function(config) {
     }
 
     data.forEach(function(d){      
-      values.push(+d[vm._config.z]);
+      values.push(+d[vm._config.color]);
     });
 
     values.sort(d3.ascending);
@@ -239,8 +243,6 @@ export default function(config) {
           quantile.push( d3.quantile(values,  i* 1/vm._config.map.quantiles.buckets ) )
         }
       }
-
-
         
     }else{
       quantile = [ d3.quantile(values, 0), d3.quantile(values, 0.2), d3.quantile(values, 0.4), d3.quantile(values, 0.6), d3.quantile(values, 0.8), d3.quantile(values,1) ];
@@ -258,9 +260,9 @@ export default function(config) {
     return quantile;
   }
 
-  Map.prototype._getQuantileColor = function(d){
+  Map.prototype._getQuantileColor = function(d,type){
     var vm = this; 
-    var total = parseFloat(d[vm._config.z]);
+    var total = parseFloat(d);
 
     //@TODO use quantile scale instead of manual calculations 
     if(vm._config && vm._config.map && vm._config.map.quantiles && vm._config.map.quantiles.colors){
@@ -272,22 +274,38 @@ export default function(config) {
             return vm._config.map.quantiles.outOfRangeColor; 
           }
         }else{
-          if(total < vm.minMax[0] || total > vm.minMax[1]){
+          if(total < vm._minMax[0] || total > vm._minMax[1]){
             console.log('outOfRangeColor', total, vm._config.map.min ,vm._config.map.max)
             return vm._config.map.quantiles.outOfRangeColor; 
           }
         }
 
-        if(total <= vm._quantiles[1]){
-          return vm._config.map.quantiles.colors[0];//"#f7c7c5";
-        }else if(total <= vm._quantiles[2]){
-          return vm._config.map.quantiles.colors[1];//"#e65158";
-        }else if(total <= vm._quantiles[3]){
-          return vm._config.map.quantiles.colors[2];//"#c20216";
-        }else if(total <= vm._quantiles[4]){
-          return vm._config.map.quantiles.colors[3];//"#750000";
-        }else if(total <= vm._quantiles[5]){
-          return vm._config.map.quantiles.colors[4];//"#480000";
+        if(type == 'default'){
+          if(total <= vm._quantiles[1]){
+            return vm._config.map.quantiles.colors[0];//"#f7c7c5";
+          }else if(total <= vm._quantiles[2]){
+            return vm._config.map.quantiles.colors[1];//"#e65158";
+          }else if(total <= vm._quantiles[3]){
+            return vm._config.map.quantiles.colors[2];//"#c20216";
+          }else if(total <= vm._quantiles[4]){
+            return vm._config.map.quantiles.colors[3];//"#750000";
+          }else if(total <= vm._quantiles[5]){
+            return vm._config.map.quantiles.colors[4];//"#480000";
+          }
+        }
+
+        if(type == 'onHover' && vm._config.map.quantiles.colorsOnHover){
+          if(total <= vm._quantiles[1]){
+            return vm._config.map.quantiles.colorsOnHover[0];//"#f7c7c5";
+          }else if(total <= vm._quantiles[2]){
+            return vm._config.map.quantiles.colorsOnHover[1];//"#e65158";
+          }else if(total <= vm._quantiles[3]){
+            return vm._config.map.quantiles.colorsOnHover[2];//"#c20216";
+          }else if(total <= vm._quantiles[4]){
+            return vm._config.map.quantiles.colorsOnHover[3];//"#750000";
+          }else if(total <= vm._quantiles[5]){
+            return vm._config.map.quantiles.colorsOnHover[4];//"#480000";
+          }
         }
 
       }
