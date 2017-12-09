@@ -120,7 +120,7 @@ export default function(config) {
         }
     */
     var id = vm._config.map.topojson.id;
-    
+
     //Call the tip
     vm._chart._svg.call(vm._tip)
 
@@ -140,8 +140,17 @@ export default function(config) {
         });
     
     d3.json(urlTopojson, function(error, t) {
+      var features = topojson.feature(t, t.objects[objects]).features;
+      //console.log('topojson features', features);
+      if (typeof vm._config.map.topojson.filter != 'undefined') {
+        var filter = vm._config.map.topojson.filter;
+        console.log(filter);
+        Object.keys(filter).map(function(key) {
+          features = features.filter(feature => feature.properties[key] === filter[key]);
+        });
+      }
       vm._polygons.selectAll("path")
-          .data(topojson.feature(t, t.objects[objects]).features, parser)
+          .data(features, parser)
           .enter().append("path")
           .attr("d", d3.geoPath().projection(vm._projection))
           .attr("id", id) 
