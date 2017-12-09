@@ -69,8 +69,11 @@ export default function(config) {
   Map.prototype.data = function(data) {
     var vm = this;
     
+    vm._topojson = data[1]? data[1] : false ; //Topojson
+    var data = data[0]; //User data
+
     if(vm._config.data.filter){
-      data = data.filter(vm._config.data.filter);
+      data = data[0].filter(vm._config.data.filter);
     }
   
     vm._data = data;
@@ -107,25 +110,16 @@ export default function(config) {
     var urlTopojson = vm._config.map.topojson.url;
     var objects = vm._config.map.topojson.objects; //'states'
     var tran = vm._config.map.topojson.translate; //var tran = [2580, 700];
-    var scale = vm._config.map.topojson.scale;
-  
-    /*function(d) {
-        d.id = d.properties.state_code.toString();
-        if(d.id.length === 1) d.id = '0'+d.id;
-        return d.id;
-    }*/
+    var scale = vm._config.map.topojson.scale; //1300
+    
     var parser = vm._config.map.topojson.parser;
-    /*function(d) {
-            return "state-" + d.id;
-        }
-    */
+   
     var id = vm._config.map.topojson.id;
     
     //Call the tip
     vm._chart._svg.call(vm._tip)
 
     vm._projection = d3.geoMercator()
-        //.scale(1300)
         .scale(scale)
         .translate(tran);
 
@@ -139,71 +133,73 @@ export default function(config) {
             return "translate(" + (vm._config.size.translateX) + ",100) scale(" + vm._config.size.scale + ")"
         });
     
-    d3.json(urlTopojson, function(error, t) {
-      vm._polygons.selectAll("path")
-          .data(topojson.feature(t, t.objects[objects]).features, parser)
-          .enter().append("path")
-          .attr("d", d3.geoPath().projection(vm._projection))
-          .attr("id", id) 
-          .attr("data-geotype", objects)
-          .attr("fill", "#808080")
-          .attr('stroke', '#a0a0a0')
-          .style('stroke-width', '1px')
-          .on('mouseover', function(d, i) {
-            if (vm._config.data.onmouseover) { //External function call
-              vm._config.data.onmouseover.call(this, d, i);
-            }
-            
-            if(vm._config.map.quantiles.colorsOnHover){ //OnHover colors
+    vm._polygons.selectAll("path")
+        .data(topojson.feature(vm._topojson, vm._topojson.objects[objects]).features, parser)
+        .enter().append("path")
+        .attr("d", d3.geoPath().projection(vm._projection))
+        .attr("id", id) 
+        .attr("data-geotype", objects)
+        .attr("fill", "#808080")
+        .attr('stroke', '#a0a0a0')
+        .style('stroke-width', '1px')
+        .on('mouseover', function(d, i) {
+        
+          if(vm._config.map.quantiles.colorsOnHover){ //OnHover colors
+            d3.select(this).attr('fill', function(d) {
+                return vm._getQuantileColor(d[vm._config.color],'onHover');
+            })
+          }
+
+          vm._tip.show(d, d3.select(this).node()) //Show TIP
+
+          if (vm._config.data.onmouseover) { //External function call
+            vm._config.data.onmouseover.call(this, d, i);
+          }
+
+        })
+        .on('mouseout', function(d, i) {
+
+            if(vm._config.map.quantiles.colorsOnHover){ //OnHover reset default color
               d3.select(this).attr('fill', function(d) {
-                  return vm._getQuantileColor(d[vm._config.color],'onHover');
+                  return vm._getQuantileColor(d[vm._config.color],'default');
               })
             }
+            //Hide tip
+            vm._tip.hide(d, d3.select(this).node()) 
 
-            vm._tip.show(d, d3.select(this).node()) //Show TIP
-          })
-          .on('mouseout', function(d, i) {
-              if (vm._config.data.onmouseout) { //External function call
-                  vm._config.data.onmouseout.call(this, d, i)
-              }
-              
-              if(vm._config.map.quantiles.colorsOnHover){ //OnHover reset default color
-                d3.select(this).attr('fill', function(d) {
-                    return vm._getQuantileColor(d[vm._config.color],'default');
-                })
-              }
-              //Hide tip
-              vm._tip.hide(d, d3.select(this).node()) 
-              
-          })
-          .on("click", function(d, i) {
-              if (vm._config.data.onclick) {
-                  vm._config.data.onclick.call(this, d, i)
-              }
-          })
+            if (vm._config.data.onmouseout) { //External function call
+              vm._config.data.onmouseout.call(this, d, i)
+            }
+            
+        })
+        .on("click", function(d, i) {
+            if (vm._config.data.onclick) {
+                vm._config.data.onclick.call(this, d, i)
+            }
+        })
 
-      vm._polygonsDefault = vm._polygons.selectAll("path").data();
+    vm._polygonsDefault = vm._polygons.selectAll("path").data();
 
-      vm._polygons.selectAll("path").attr("stroke", "#333").attr('stroke-width', 0.2);
-      vm._polygons.selectAll("path").attr("fill", "red");
-      vm._polygons.selectAll("path").attr('data-total', null);
-      vm._polygons.selectAll("path")
-          .data(vm._data, function(d) {
-            //@TODO WHY THE F..K IS D3 ITERATING OVER THE OLD DATA
-            return d.id ? d.id : d[vm._config.id];
-          })
-          .attr('fill', function(d) {
-              return vm._getQuantileColor(d[vm._config.color],'default');
-          })
-          .attr('data-total', function(d) {
-              return +d[vm._config.color];
-          })
+    vm._polygons.selectAll("path").attr("stroke", "#333").attr('stroke-width', 0.2);
+    vm._polygons.selectAll("path").attr("fill", "red");
+    vm._polygons.selectAll("path").attr('data-total', null);
+    vm._polygons.selectAll("path")
+        .data(vm._data, function(d) {
+          //@TODO WHY THE F..K IS D3 ITERATING OVER THE OLD DATA
+          return d.id ? d.id : d[vm._config.id];
+        })
+        .attr('fill', function(d) {
+            return vm._getQuantileColor(d[vm._config.color],'default');
+        })
+        .attr('data-total', function(d) {
+            return +d[vm._config.color];
+        })
 
-      //Resets the map paths data to topojson
-      vm._polygons.selectAll("path").data(vm._polygonsDefault, function(d) {
-          return d.id;
-      });
+    //Resets the map paths data to topojson
+    vm._polygons.selectAll("path").data(vm._polygonsDefault, function(d) {
+        return d.id;
     });
+
 
   };
 
@@ -323,6 +319,9 @@ export default function(config) {
     }
 
   }
+
+
+
 
 
 
