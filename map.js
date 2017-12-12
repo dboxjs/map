@@ -160,7 +160,7 @@ export default function(config) {
             })
           }
 
-          vm._tip.show(d, d3.select(this).node()) //Show TIP
+          //vm._tip.show(d, d3.select(this).node()) //Show TIP
 
           if (vm._config.data.onmouseover) { //External function call
             vm._config.data.onmouseover.call(this, d, i);
@@ -175,7 +175,7 @@ export default function(config) {
               })
             }
             //Hide tip
-            vm._tip.hide(d, d3.select(this).node()) 
+            //vm._tip.hide(d, d3.select(this).node()) 
 
             if (vm._config.data.onmouseout) { //External function call
               vm._config.data.onmouseout.call(this, d, i)
