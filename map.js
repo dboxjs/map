@@ -11,7 +11,7 @@ export default function(config) {
     vm._data = [];
     vm._scales = {};
     vm._axes = {};
-    vm._tip = d3.tip().attr('class', 'd3-tip');
+    vm._tip = vm.utils.d3.tip().attr('class', 'd3-tip');
 
     vm._formatWithZeroDecimals  = d3.format(",.0f");
     vm._formatWithOneDecimal    = d3.format(",.1f");
