@@ -135,10 +135,9 @@ export default function(config) {
         });
     
     var features = topojson.feature(vm._topojson, vm._topojson.objects[objects]).features;
-    //console.log('topojson features', features);
+
     if (typeof vm._config.map.topojson.filter != 'undefined') {
       var filter = vm._config.map.topojson.filter;
-      console.log(filter);
       Object.keys(filter).map(function(key) {
         features = features.filter(feature => feature.properties[key] === filter[key]);
       });
