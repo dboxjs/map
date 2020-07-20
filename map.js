@@ -3,7 +3,7 @@ import * as d3 from 'd3';
  * Map
  */
 
-export default function(config) {
+export default function (config) {
   function Map(config) {
     var vm = this;
     vm._config = config ? config : {};
@@ -15,9 +15,9 @@ export default function(config) {
       .attr(
         'class',
         'd3-tip ' +
-          (vm._config.tooltip && vm._config.tooltip.classed
-            ? vm._config.tooltip.classed
-            : '')
+        (vm._config.tooltip && vm._config.tooltip.classed ?
+          vm._config.tooltip.classed :
+          '')
       );
 
     vm._formatWithZeroDecimals = d3.format(',.0f');
@@ -27,7 +27,7 @@ export default function(config) {
 
     vm._format = {};
     vm._format.total = vm._formatWithZeroDecimals;
-    vm._format.percentage = function(d) {
+    vm._format.percentage = function (d) {
       return d3.format(',.1f')(d) + '%';
     };
     vm._format.change = d3.format(',.1f');
@@ -36,45 +36,45 @@ export default function(config) {
   //-------------------------------
   //User config functions
 
-  Map.prototype.id = function(col) {
+  Map.prototype.id = function (col) {
     var vm = this;
     vm._config.id = col;
     return vm;
   };
 
-  Map.prototype.color = function(col) {
+  Map.prototype.color = function (col) {
     var vm = this;
     vm._config.color = col;
     return vm;
   };
 
-  Map.prototype.tip = function(tip) {
+  Map.prototype.tip = function (tip) {
     var vm = this;
     vm._config.tip = tip;
     vm._tip.html(vm._config.tip);
     return vm;
   };
 
-  Map.prototype.onclick = function(onclick) {
+  Map.prototype.onclick = function (onclick) {
     var vm = this;
     vm._config.onclick = onclick;
     return vm;
   };
 
-  Map.prototype.end = function() {
+  Map.prototype.end = function () {
     var vm = this;
     return vm._chart;
   };
 
   //-------------------------------
   //Triggered by the chart.js;
-  Map.prototype.chart = function(chart) {
+  Map.prototype.chart = function (chart) {
     var vm = this;
     vm._chart = chart;
     return vm;
   };
 
-  Map.prototype.data = function(data) {
+  Map.prototype.data = function (data) {
     var vm = this;
 
     vm._topojson = data[1] ? data[1] : false; //Topojson
@@ -86,7 +86,7 @@ export default function(config) {
 
     vm._data = data;
     vm._quantiles = vm._setQuantile(data);
-    vm._minMax = d3.extent(data, function(d) {
+    vm._minMax = d3.extent(data, function (d) {
       return +d[vm._config.color];
     });
 
@@ -96,24 +96,24 @@ export default function(config) {
     return vm;
   };
 
-  Map.prototype.scales = function(s) {
+  Map.prototype.scales = function (s) {
     var vm = this;
     vm._scales = s;
     return vm;
   };
 
-  Map.prototype.axes = function(a) {
+  Map.prototype.axes = function (a) {
     var vm = this;
     vm._axes = a;
     return vm;
   };
 
-  Map.prototype.domains = function() {
+  Map.prototype.domains = function () {
     var vm = this;
     return vm;
   };
 
-  Map.prototype.draw = function() {
+  Map.prototype.draw = function () {
     var vm = this;
 
     //@config
@@ -140,7 +140,7 @@ export default function(config) {
       .append('g')
       .attr('id', 'dbox-map-polygons')
       .style('display', 'true')
-      .attr('transform', function() {
+      .attr('transform', function () {
         return (
           'translate(' +
           vm._config.size.translateX +
@@ -155,7 +155,7 @@ export default function(config) {
 
     if (typeof vm._config.map.topojson.filter != 'undefined') {
       var filter = vm._config.map.topojson.filter;
-      Object.keys(filter).map(function(key) {
+      Object.keys(filter).map(function (key) {
         features = features.filter(
           feature => feature.properties[key] === filter[key]
         );
@@ -173,10 +173,10 @@ export default function(config) {
       .attr('fill', '#808080')
       .attr('stroke', '#a0a0a0')
       .style('stroke-width', '1px')
-      .on('mouseover', function(d, i) {
+      .on('mouseover', function (d, i) {
         if (vm._config.map.quantiles.colorsOnHover) {
           //OnHover colors
-          d3.select(this).attr('fill', function(d) {
+          d3.select(this).attr('fill', function (d) {
             return vm._getQuantileColor(d[vm._config.color], 'onHover');
           });
         }
@@ -188,10 +188,10 @@ export default function(config) {
           vm._config.data.onmouseover.call(this, d, i);
         }
       })
-      .on('mouseout', function(d, i) {
+      .on('mouseout', function (d, i) {
         if (vm._config.map.quantiles.colorsOnHover) {
           //OnHover reset default color
-          d3.select(this).attr('fill', function(d) {
+          d3.select(this).attr('fill', function (d) {
             return vm._getQuantileColor(d[vm._config.color], 'default');
           });
         }
@@ -203,7 +203,7 @@ export default function(config) {
           vm._config.data.onmouseout.call(this, d, i);
         }
       })
-      .on('click', function(d, i) {
+      .on('click', function (d, i) {
         if (vm._config.data.onclick) {
           vm._config.data.onclick.call(this, d, i);
         }
@@ -219,24 +219,24 @@ export default function(config) {
     vm._polygons.selectAll('path').attr('data-total', null);
     vm._polygons
       .selectAll('path')
-      .data(vm._data, function(d) {
+      .data(vm._data, function (d) {
         //@TODO WHY THE F..K IS D3 ITERATING OVER THE OLD DATA
         return d.id ? d.id : d[vm._config.id];
       })
-      .attr('fill', function(d) {
+      .attr('fill', function (d) {
         return vm._getQuantileColor(d[vm._config.color], 'default');
       })
-      .attr('data-total', function(d) {
+      .attr('data-total', function (d) {
         return +d[vm._config.color];
       });
 
     //Resets the map paths data to topojson
-    vm._polygons.selectAll('path').data(vm._polygonsDefault, function(d) {
+    vm._polygons.selectAll('path').data(vm._polygonsDefault, function (d) {
       return d.id;
     });
   };
 
-  Map.prototype._setQuantile = function(data) {
+  Map.prototype._setQuantile = function (data) {
     var vm = this;
     var values = [];
     var quantile = [];
@@ -249,7 +249,7 @@ export default function(config) {
       return vm._config.map.quantiles.predefinedQuantiles;
     }
 
-    data.forEach(function(d) {
+    data.forEach(function (d) {
       values.push(+d[vm._config.color]);
     });
 
@@ -263,7 +263,7 @@ export default function(config) {
       vm._config.map.quantiles.buckets
     ) {
       if (vm._config.map.quantiles.ignoreZeros === true) {
-        var aux = _.dropWhile(values, function(o) {
+        var aux = _.dropWhile(values, function (o) {
           return o <= 0;
         });
         //aux.unshift(values[0]);
@@ -314,7 +314,7 @@ export default function(config) {
     return quantile;
   };
 
-  Map.prototype._getQuantileColor = function(d, type) {
+  Map.prototype._getQuantileColor = function (d, type) {
     var vm = this;
     var total = parseFloat(d);
 
@@ -353,7 +353,7 @@ export default function(config) {
           }
         }
 
-        if (type == 'default') {
+        if (type === 'default') {
           if (total <= vm._quantiles[1]) {
             return vm._config.map.quantiles.colors[0]; //"#f7c7c5";
           } else if (total <= vm._quantiles[2]) {
@@ -367,7 +367,7 @@ export default function(config) {
           }
         }
 
-        if (type == 'onHover' && vm._config.map.quantiles.colorsOnHover) {
+        if (type === 'onHover' && vm._config.map.quantiles.colorsOnHover) {
           if (total <= vm._quantiles[1]) {
             return vm._config.map.quantiles.colorsOnHover[0]; //"#f7c7c5";
           } else if (total <= vm._quantiles[2]) {
@@ -383,7 +383,7 @@ export default function(config) {
       }
     }
 
-    if (vm._quantiles.length == 2) {
+    if (vm._quantiles.length === 2) {
       /*if(total === 0 ){
         return d4theme.colors.quantiles[0];//return '#fff';
       }else if(total <= vm._quantiles[1]){
